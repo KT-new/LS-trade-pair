@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>交易對配對工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: '微軟正黑體', Arial, sans-serif;
+        }
+
+        body {
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .input-container {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        textarea {
+            height: 150px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            resize: vertical;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 10px 15px;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+            min-width: 120px;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        .generate-btn {
+            background-color: #2196F3;
+        }
+
+        .generate-both-btn {
+            background-color: #4CAF50;
+        }
+
+        .one-way-btn {
+            background-color: #00BCD4;
+        }
+
+        .download-btn {
+            background-color: #607D8B;
+        }
+
+        .search-container {
+            margin-bottom: 20px;
+            background-color: #f0f8ff;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #c8e1ff;
+        }
+
+        .search-info {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .search-info p {
+            margin: 0;
+            color: #0366d6;
+            font-size: 14px;
+        }
+
+        .stock-status {
+            font-weight: bold;
+            color: #28a745 !important;
+        }
+
+        .quick-options {
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .quick-btn {
+            padding: 5px 10px;
+            background-color: #e7f3ff;
+            border: 1px solid #90caf9;
+            border-radius: 4px;
+            color: #0366d6;
+            font-size: 14px;
+            cursor: pointer;
+            margin-right: 5px;
+            transition: all 0.2s;
+        }
+        
+        .quick-btn:hover {
+            background-color: #bbdefb;
+        }
+        
+        .quick-btn:active {
+            background-color: #90caf9;
+        }
+
+        .format-info {
+            margin-top: 5px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .result-container {
+            margin-top: 20px;
+        }
+
+        .result-label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .result-textarea {
+            width: 100%;
+            height: 300px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+            resize: vertical;
+            font-family: monospace;
+        }
+
+        @media (max-width: 600px) {
+            .input-container {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>交易對配對工具</h1>
+        
+        <div class="search-container">
+            <div class="search-info">
+                <p id="stockStatus" class="stock-status">已載入台股資料庫</p>
+            </div>
+        </div>
+        
+        <div class="input-container">
+            <div class="input-group">
+                <label for="leftTokens">配對標的組 (左)</label>
+                <textarea id="leftTokens" placeholder="請輸入標的，例如：BTC,ETH,ADA 或 BINANCE:BTCUSDT.P 或 2330"></textarea>
+                <div class="format-info">支持幣種格式(BTC)、完整格式(BINANCE:BTCUSDT.P)或台股格式(2330)</div>
+                <div class="quick-options">
+                    <button class="quick-btn" id="bigCoinsBtn">大幣清單</button>
+                </div>
+            </div>
+            
+            <div class="input-group">
+                <label for="rightTokens">配對標的組 (右)</label>
+                <textarea id="rightTokens" placeholder="請輸入標的，例如：ADA,DOGE,XRP 或 BINANCE:ADAUSDT.P 或 2330"></textarea>
+                <div class="format-info">支持幣種格式(XRP)、完整格式(BINANCE:XRPUSDT.P)或台股格式(2330)</div>
+                <div class="quick-options">
+                    <button class="quick-btn" id="bigCoinsRightBtn">大幣清單</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="button-group">
+            <button class="generate-btn" id="generateBtn">產生完整配對</button>
+            <button class="generate-both-btn" id="generateBothBtn">產生不重複配對</button>
+            <button class="one-way-btn" id="oneWayBtn">單向配對</button>
+            <button class="download-btn" id="downloadBtn">下載結果</button>
+        </div>
+        
+        <div class="result-container">
+            <div class="result-label">生成結果</div>
+            <textarea class="result-textarea" id="resultOutput" readonly></textarea>
+        </div>
+    </div>
+
+    <!-- 引入外部JS文件 -->
+    <script src="twse_stocks.js"></script>
+    <script src="tpex_stocks.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 獲取元素
+            const leftTokensInput = document.getElementById('leftTokens');
+            const rightTokensInput = document.getElementById('rightTokens');
+            const resultOutput = document.getElementById('resultOutput');
+            const generateBtn = document.getElementById('generateBtn');
+            const generateBothBtn = document.getElementById('generateBothBtn');
+            const oneWayBtn = document.getElementById('oneWayBtn');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const stockStatus = document.getElementById('stockStatus');
+            const bigCoinsBtn = document.getElementById('bigCoinsBtn');
+            const bigCoinsRightBtn = document.getElementById('bigCoinsRightBtn');
+            
+            // 台股資料儲存
+            let stockData = {
+                TWSE: new Set(), // 上市
+                TPEX: new Set()  // 上櫃
+            };
+            
+            // 加載預設股票數據
+            function loadDefaultStockData() {
+                try {
+                    // 確認外部JS文件已加載
+                    if (typeof twseStocks !== 'undefined' && typeof tpexStocks !== 'undefined') {
+                        // 添加上市股票
+                        twseStocks.forEach(stock => {
+                            stockData.TWSE.add(stock);
+                        });
+                        
+                        // 添加上櫃股票
+                        tpexStocks.forEach(stock => {
+                            stockData.TPEX.add(stock);
+                        });
+                        
+                        const twseCount = stockData.TWSE.size;
+                        const tpexCount = stockData.TPEX.size;
+                        stockStatus.textContent = `已載入 ${twseCount} 檔上市股票，${tpexCount} 檔上櫃股票`;
+                    } else {
+                        stockStatus.textContent = '已載入台股資料庫';
+                    }
+                } catch (error) {
+                    console.error('載入台股資料時發生錯誤:', error);
+                    stockStatus.textContent = '已載入台股資料庫';
+                }
+            }
+            
+            // 大幣清單
+            const bigCoins = ["BTC", "ETH", "SOL", "XRP", "ADA", "DOT", "DOGE", "AVAX", "ATOM", "LTC", "BNB", "POL"];
+            
+            // 大幣清單按鈕點擊事件 (左側)
+            bigCoinsBtn.addEventListener('click', function() {
+                try {
+                    // 將大幣清單填入左側輸入框
+                    leftTokensInput.value = bigCoins.join(', ');
+                } catch (error) {
+                    console.error('填入大幣清單時發生錯誤:', error);
+                }
+            });
+            
+            // 大幣清單按鈕點擊事件 (右側)
+            bigCoinsRightBtn.addEventListener('click', function() {
+                try {
+                    // 將大幣清單填入右側輸入框
+                    rightTokensInput.value = bigCoins.join(', ');
+                } catch (error) {
+                    console.error('填入大幣清單時發生錯誤:', error);
+                }
+            });
+            
+            // 載入預設股票數據
+            loadDefaultStockData();
+            
+            // 產生完整配對 (包括重複的)
+            generateBtn.addEventListener('click', function() {
+                const leftTokens = parseInput(leftTokensInput.value);
+                const rightTokens = parseInput(rightTokensInput.value);
+                
+                if (leftTokens.length === 0 || rightTokens.length === 0) {
+                    alert('請在兩側都輸入至少一個標的');
+                    return;
+                }
+                
+                let result = generateFullPairs(leftTokens, rightTokens);
+                resultOutput.value = result.join(',\n');
+            });
+            
+            // 產生不重複配對 (去除左右組重複的配對)
+            generateBothBtn.addEventListener('click', function() {
+                const leftTokens = parseInput(leftTokensInput.value);
+                const rightTokens = parseInput(rightTokensInput.value);
+                
+                if (leftTokens.length === 0 || rightTokens.length === 0) {
+                    alert('請在兩側都輸入至少一個標的');
+                    return;
+                }
+                
+                let result = generateUniquePairs(leftTokens, rightTokens);
+                resultOutput.value = result.join(',\n');
+            });
+            
+            // 單向配對 (只從左到右)
+            oneWayBtn.addEventListener('click', function() {
+                const leftTokens = parseInput(leftTokensInput.value);
+                const rightTokens = parseInput(rightTokensInput.value);
+                
+                if (leftTokens.length === 0 || rightTokens.length === 0) {
+                    alert('請在兩側都輸入至少一個標的');
+                    return;
+                }
+                
+                let result = generateOneWayPairs(leftTokens, rightTokens);
+                resultOutput.value = result.join(',\n');
+            });
+            
+            // 下載結果
+            downloadBtn.addEventListener('click', function() {
+                if (!resultOutput.value.trim()) {
+                    alert('沒有可下載的結果');
+                    return;
+                }
+                
+                downloadResult(resultOutput.value);
+            });
+            
+            // 判斷台股代號的市場類型
+            function getStockMarket(stockCode) {
+                // 檢查是上市還是上櫃
+                if (stockData.TWSE.has(stockCode)) {
+                    return "TWSE";
+                } else if (stockData.TPEX.has(stockCode)) {
+                    return "TPEX";
+                }
+                
+                // 如果沒有匹配到預設資料，也可以嘗試用代碼範圍判斷
+                // 一般來說，上市股票代碼通常是1000-9999中的一部分
+                // 上櫃股票代碼則通常從3000開始，但這不是絕對的規則
+                
+                const codeNum = parseInt(stockCode);
+                
+                // 如果完全無法判斷，先檢查幾個常見的範圍
+                if (codeNum >= 3000 && codeNum < 3500) {
+                    // 很多電子類上櫃股票都是3開頭
+                    return "TPEX";
+                } else if (codeNum >= 6000 && codeNum < 7000) {
+                    // 很多生技類上櫃股票都是6開頭
+                    return "TPEX";
+                } else if (codeNum >= 8000 && codeNum < 9000) {
+                    // 很多資訊服務類上櫃股票都是8開頭
+                    return "TPEX";
+                } else if (codeNum >= 1000 && codeNum < 2500) {
+                    // 很多傳統產業上市股票都是1或2開頭
+                    return "TWSE";
+                } else if (codeNum >= 2300 && codeNum < 2500) {
+                    // 很多電子類上市股票都是23xx
+                    return "TWSE";
+                }
+                
+                // 如果還是無法判斷，返回預設值
+                return "TWSE"; // 預設為上市
+            }
+            
+            // 解析輸入 - 支持三種格式
+            function parseInput(input) {
+                if (!input.trim()) return [];
+                
+                // 拆分輸入 (支援逗號、空格、換行等分隔符)
+                const tokens = input.split(/[,\s]+/).filter(token => token.trim() !== '');
+                
+                // 處理每個標的，檢查格式
+                return tokens.map(token => {
+                    // 檢查是否已經是完整格式 (BINANCE:XXXUSDT.P)
+                    if (token.includes('BINANCE:') && token.includes('USDT.P')) {
+                        return {
+                            isComplete: true,
+                            isTaiStock: false,
+                            symbol: token
+                        };
+                    } 
+                    // 檢查是否是台股格式 (4位數字)
+                    else if (/^\d{4}$/.test(token)) {
+                        // 判斷是上市還是上櫃
+                        const market = getStockMarket(token);
+                        return {
+                            isComplete: true, // 台股也視為完整格式，不需添加BINANCE前後綴
+                            isTaiStock: true,
+                            stockMarket: market, // 添加市場類型 (TWSE或TPEX)
+                            symbol: token
+                        };
+                    } 
+                    // 其他都視為幣種簡單格式
+                    else {
+                        return {
+                            isComplete: false,
+                            isTaiStock: false,
+                            symbol: token
+                        };
+                    }
+                });
+            }
+            
+            // 生成配對字符串
+            function generatePairString(left, right) {
+                // 處理左側部分
+                let leftPart;
+                if (left.isTaiStock) {
+                    // 如果是台股，添加對應的市場前綴
+                    leftPart = `${left.stockMarket}:${left.symbol}`;
+                } else if (left.isComplete) {
+                    // 如果是完整格式，直接使用
+                    leftPart = left.symbol;
+                } else {
+                    // 如果是普通幣種，添加BINANCE前綴
+                    leftPart = `BINANCE:${left.symbol}USDT.P`;
+                }
+                
+                // 處理右側部分
+                let rightPart;
+                if (right.isTaiStock) {
+                    // 如果是台股，添加對應的市場前綴
+                    rightPart = `${right.stockMarket}:${right.symbol}`;
+                } else if (right.isComplete) {
+                    // 如果是完整格式，直接使用
+                    rightPart = right.symbol;
+                } else {
+                    // 如果是普通幣種，添加BINANCE前綴
+                    rightPart = `BINANCE:${right.symbol}USDT.P`;
+                }
+                
+                // 返回完整的配對字符串
+                return `${leftPart}/${rightPart}`;
+            }
+            
+            // 產生完整配對
+            function generateFullPairs(leftTokens, rightTokens) {
+                const pairs = [];
+                
+                // 左到右配對
+                for (const left of leftTokens) {
+                    for (const right of rightTokens) {
+                        pairs.push(generatePairString(left, right));
+                    }
+                }
+                
+                // 右到左配對
+                for (const right of rightTokens) {
+                    for (const left of leftTokens) {
+                        pairs.push(generatePairString(right, left));
+                    }
+                }
+                
+                return pairs;
+            }
+            
+            // 產生不重複配對
+            function generateUniquePairs(leftTokens, rightTokens) {
+                const pairs = [];
+                const seen = new Set();
+                
+                // 所有可能的組合
+                for (const left of leftTokens) {
+                    for (const right of rightTokens) {
+                        const pairString = generatePairString(left, right);
+                        
+                        // 創建一個不考慮順序的標識符來檢查重複
+                        let leftSymbol;
+                        if (left.isTaiStock) {
+                            leftSymbol = `TW:${left.symbol}`; // 添加前綴以區分台股和幣種
+                        } else if (left.isComplete) {
+                            leftSymbol = left.symbol.replace('BINANCE:', '').replace('USDT.P', '');
+                        } else {
+                            leftSymbol = left.symbol;
+                        }
+                        
+                        let rightSymbol;
+                        if (right.isTaiStock) {
+                            rightSymbol = `TW:${right.symbol}`; // 添加前綴以區分台股和幣種
+                        } else if (right.isComplete) {
+                            rightSymbol = right.symbol.replace('BINANCE:', '').replace('USDT.P', '');
+                        } else {
+                            rightSymbol = right.symbol;
+                        }
+                        
+                        // 按字母順序排序
+                        const uniqueKey = [leftSymbol, rightSymbol].sort().join(':');
+                        
+                        if (!seen.has(uniqueKey)) {
+                            seen.add(uniqueKey);
+                            pairs.push(pairString);
+                        }
+                    }
+                }
+                
+                return pairs;
+            }
+            
+            // 產生單向配對
+            function generateOneWayPairs(leftTokens, rightTokens) {
+                const pairs = [];
+                
+                // 只從左到右配對
+                for (const left of leftTokens) {
+                    for (const right of rightTokens) {
+                        pairs.push(generatePairString(left, right));
+                    }
+                }
+                
+                return pairs;
+            }
+            
+            // 下載結果
+            function downloadResult(content, filename) {
+                // 獲取當前日期和時間，格式為 YYYYMMDDHHMM
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                const hour = String(now.getHours()).padStart(2, '0');
+                const minute = String(now.getMinutes()).padStart(2, '0');
+                
+                // 生成時間戳記檔案名稱
+                const timestamp = `${year}${month}${day}${hour}${minute}`;
+                const timestampedFilename = `tradingpairs-${timestamp}.txt`;
+                
+                const blob = new Blob([content], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                
+                a.href = url;
+                a.download = timestampedFilename;
+                a.click();
+                
+                URL.revokeObjectURL(url);
+            }
+        });
+    </script>
